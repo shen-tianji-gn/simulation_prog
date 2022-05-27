@@ -1,12 +1,17 @@
-from cmath import exp
 import numpy as np
-import cupy as cp
-from numpy import pi as PI
+
+import platform
+if platform.system() == 'Linux':
+    import cupy as cp
+
+from numpy import matrix, pi as PI
 from numpy import e as E
 from scipy.special import gammaincc, factorial, binom
 from scipy.special import gamma
 from scipy.special import expn
 from scipy.special import erf
+from scipy.special import factorial
+from scipy.special import comb
 from numpy import isnan
 from mpmath import meijerg, hyp0f1, hyp1f1
 from numpy.linalg import det
@@ -89,77 +94,127 @@ def channel_vector(Tx_num,Rx_num, N, type, in_the_sight, **kw):
     '''
     c = 3e8
     K = 0
-    if type == 0:
-        # cooperative devices are transmitter
-        if in_the_sight == 'rayleigh':
-            x = cp.random.normal(0,cp.sqrt(1/2), (Rx_num,int(N*Tx_num)))
-            y = cp.random.normal(0,cp.sqrt(1/2), (Rx_num,int(N*Tx_num)))
-            vec_complex = x + 1j * y
-        elif in_the_sight == 'rician':
-            # if kw.get('K') != None:
-            #     K = kw.get('K')
-            #     Omega = kw.get('Omega')
-            # nu = np.sqrt(K * Omega / (1 + K))
-            # sigma = np.sqrt(Omega / (2 * (K + 1)))
-            # x = norm.rvs(loc=nu / (sigma * np.sqrt(2)), scale=sigma, size=coodinates)
-            # y = norm.rvs(loc=nu / (sigma * np.sqrt(2)), scale=sigma, size=coodinates)
-            if kw.get('K') != None:
-                K = kw.get('K')
-                f = kw.get('f')
-                d = kw.get('d') # vector
-            
-            h_nlos = cp.zeros((Rx_num,Tx_num,N),dtype=complex)
-            h_los = cp.zeros((Rx_num,Tx_num,N),dtype=complex)
-            for n_index in range(N):
-                x = cp.random.normal(0,cp.sqrt(1/2), (Rx_num,Tx_num))
-                y = cp.random.normal(0,cp.sqrt(1/2), (Rx_num,Tx_num))
-                h_nlos[:,:,n_index] = x + 1j * y
-                h_los[:,:,n_index] = cp.exp(-1j * 2 * PI * f * d[n_index]/c) * cp.ones((Rx_num,Tx_num))
-            vec_complex = cp.reshape(\
-                cp.sqrt(K / (K + 1)) * h_los + cp.sqrt(1 / (K + 1)) * h_nlos,
-                (Rx_num,int(N * Tx_num)))
-        else:
-            print('Error: Wrong channel type', file=sys.stderr)
-            # error while not rician or rayleigh
-            sys.exit(1)
-    elif type == 1:
+    if platform.system() == 'Linux':
+        if type == 0:
+            # cooperative devices are transmitter
+            if in_the_sight == 'rayleigh':
+                x = cp.random.normal(0,cp.sqrt(1/2), (Rx_num,int(N*Tx_num)))
+                y = cp.random.normal(0,cp.sqrt(1/2), (Rx_num,int(N*Tx_num)))
+                vec_complex = x + 1j * y
+            elif in_the_sight == 'rician':
+                if kw.get('K') != None: 
+                    K = kw.get('K')
+                    f = kw.get('f')
+                    d = kw.get('d') # vector
+                
+                h_nlos = cp.zeros((Rx_num,Tx_num,N),dtype=complex)
+                h_los = cp.zeros((Rx_num,Tx_num,N),dtype=complex)
+                for n_index in range(N):
+                    x = cp.random.normal(0,cp.sqrt(1/2), (Rx_num,Tx_num))
+                    y = cp.random.normal(0,cp.sqrt(1/2), (Rx_num,Tx_num))
+                    h_nlos[:,:,n_index] = x + 1j * y
+                    h_los[:,:,n_index] = cp.exp(-1j * 2 * PI * f * d[n_index]/c) * cp.ones((Rx_num,Tx_num))
+                vec_complex = cp.reshape(\
+                    cp.sqrt(K / (K + 1)) * h_los + cp.sqrt(1 / (K + 1)) * h_nlos,
+                    (Rx_num,int(N * Tx_num)))
+            else:
+                print('Error: Wrong channel type', file=sys.stderr)
+                # error while not rician or rayleigh
+                sys.exit(1)
+        elif type == 1:
         # cooperative devices are receivers
-        if in_the_sight == 'rayleigh':
-            x = cp.random.normal(0,cp.sqrt(1/2), size=(int(N*Rx_num),Tx_num))
-            y = cp.random.normal(0,cp.sqrt(1/2), size=(int(N*Rx_num),Tx_num))
-            vec_complex = x + 1j * y
-        elif in_the_sight == 'rician':
-            # if kw.get('K') != None:
-            #     K = kw.get('K')
-            #     Omega = kw.get('Omega')
-            # nu = np.sqrt(K * Omega / (1 + K))
-            # sigma = np.sqrt(Omega / (2 * (K + 1)))
-            # x = norm.rvs(loc=nu / (sigma * np.sqrt(2)), scale=sigma, size=coodinates)
-            # y = norm.rvs(loc=nu / (sigma * np.sqrt(2)), scale=sigma, size=coodinates)
-            if kw.get('K') != None:
-                K = kw.get('K')
-                f = kw.get('f')
-                d = kw.get('d') # vector
+            if in_the_sight == 'rayleigh':
+                x = cp.random.normal(0,cp.sqrt(1/2), size=(int(N*Rx_num),Tx_num))
+                y = cp.random.normal(0,cp.sqrt(1/2), size=(int(N*Rx_num),Tx_num))
+                vec_complex = x + 1j * y
+            elif in_the_sight == 'rician':
+                if kw.get('K') != None:
+                    K = kw.get('K')
+                    f = kw.get('f')
+                    d = kw.get('d') # vector
             
-            h_nlos = cp.zeros((N,Rx_num,Tx_num),dtype=complex)
-            h_los = cp.zeros((N,Rx_num,Tx_num),dtype=complex)
-            for n_index in range(N):
-                x = cp.random.normal(0, cp.sqrt(1/2), (Rx_num,Tx_num))
-                y = cp.random.normal(0, cp.sqrt(1/2), (Rx_num,Tx_num))
-                h_nlos[n_index] = x + 1j * y
-                h_los[n_index] = cp.exp(-1j * 2 * PI * f * d[n_index] / c) * cp.ones((Rx_num,Tx_num))
-            vec_complex = cp.reshape(\
-                cp.sqrt(K / (K + 1)) * h_los + cp.sqrt(1 / (K + 1)) * h_nlos,
-                (N * Rx_num,Tx_num))
+                h_nlos = cp.zeros((N,Rx_num,Tx_num),dtype=complex)
+                h_los = cp.zeros((N,Rx_num,Tx_num),dtype=complex)
+                for n_index in range(N):
+                    x = cp.random.normal(0, cp.sqrt(1/2), (Rx_num,Tx_num))
+                    y = cp.random.normal(0, cp.sqrt(1/2), (Rx_num,Tx_num))
+                    h_nlos[n_index] = x + 1j * y
+                    h_los[n_index] = cp.exp(-1j * 2 * PI * f * d[n_index] / c) * cp.ones((Rx_num,Tx_num))
+                vec_complex = cp.reshape(\
+                    cp.sqrt(K / (K + 1)) * h_los + cp.sqrt(1 / (K + 1)) * h_nlos,
+                    (N * Rx_num,Tx_num))
+            else:
+                # error while not rician or rayleigh
+                print('Error: Wrong channel type', file=sys.stderr)
+                sys.exit(1)
         else:
-            print('Error: Wrong channel type', file=sys.stderr)
-            # error while not rician or rayleigh
+            print("Error: Wrong devices type", file=sys.stderr)
             sys.exit(1)
+     
+        return cp.asnumpy(vec_complex)
+
+    elif platform.system() == 'Darwin':
+        if type == 0:
+            # cooperative devices are transmitter
+            if in_the_sight == 'rayleigh':
+                x = np.random.normal(0,np.sqrt(1/2), (Rx_num,int(N*Tx_num)))
+                y = np.random.normal(0,np.sqrt(1/2), (Rx_num,int(N*Tx_num)))
+                vec_complex = x + 1j * y
+            elif in_the_sight == 'rician':
+                if kw.get('K') != None: 
+                    K = kw.get('K')
+                    f = kw.get('f')
+                    d = kw.get('d') # vector
+                
+                h_nlos = np.zeros((Rx_num,Tx_num,N),dtype=complex)
+                h_los = np.zeros((Rx_num,Tx_num,N),dtype=complex)
+                for n_index in range(N):
+                    x = np.random.normal(0,np.sqrt(1/2), (Rx_num,Tx_num))
+                    y = np.random.normal(0,np.sqrt(1/2), (Rx_num,Tx_num))
+                    h_nlos[:,:,n_index] = x + 1j * y
+                    h_los[:,:,n_index] = np.exp(-1j * 2 * PI * f * d[n_index]/c) * np.ones((Rx_num,Tx_num))
+                vec_complex = np.reshape(\
+                    np.sqrt(K / (K + 1)) * h_los + np.sqrt(1 / (K + 1)) * h_nlos,
+                    (Rx_num,int(N * Tx_num)))
+            else:
+                print('Error: Wrong channel type', file=sys.stderr)
+                # error while not rician or rayleigh
+                sys.exit(1)
+        elif type == 1:
+        # cooperative devices are receivers
+            if in_the_sight == 'rayleigh':
+                x = np.random.normal(0,np.sqrt(1/2), size=(int(N*Rx_num),Tx_num))
+                y = np.random.normal(0,np.sqrt(1/2), size=(int(N*Rx_num),Tx_num))
+                vec_complex = x + 1j * y
+            elif in_the_sight == 'rician':
+                if kw.get('K') != None:
+                    K = kw.get('K')
+                    f = kw.get('f')
+                    d = kw.get('d') # vector
+            
+                h_nlos = np.zeros((N,Rx_num,Tx_num),dtype=complex)
+                h_los = np.zeros((N,Rx_num,Tx_num),dtype=complex)
+                for n_index in range(N):
+                    x = np.random.normal(0, np.sqrt(1/2), (Rx_num,Tx_num))
+                    y = np.random.normal(0, np.sqrt(1/2), (Rx_num,Tx_num))
+                    h_nlos[n_index] = x + 1j * y
+                    h_los[n_index] = np.exp(-1j * 2 * PI * f * d[n_index] / c) * np.ones((Rx_num,Tx_num))
+                vec_complex = np.reshape(\
+                    np.sqrt(K / (K + 1)) * h_los + np.sqrt(1 / (K + 1)) * h_nlos,
+                    (N * Rx_num,Tx_num))
+            else:
+                # error while not rician or rayleigh
+                print('Error: Wrong channel type', file=sys.stderr)
+                sys.exit(1)
+        else:
+            print("Error: Wrong devices type", file=sys.stderr)
+            sys.exit(1)
+     
+        return vec_complex
     else:
-        print("Error: Wrong devices type", file=sys.stderr)
+        print("Error: Wrong OS type", file=sys.stderr)
         sys.exit(1)
-    
-    return cp.asnumpy(vec_complex)
+
 
 def expected_value_mimo(s,t,rho,rician_k):
     
@@ -469,169 +524,118 @@ def path_loss(dist,frequency):
     
     return (c/(4 * PI * dist * frequency)) ** 2
 
-
-
-
-def ga_expect(s,t,rician_k,gamma,infty):
-    '''
-    Definition of Expect_value in Gaussian Approximation,
-    i.e.,
-    E[gamma].
-    
-    s = min(transmitter_antenna, receiver_antenna)
-    t = max(transmitter_antenna, receiver_antenna)
-    rician_k: Rician factor
-    gamma: SNR
-    infty: loop of infinity
-    '''
-    
-    sum_l = 0
-    for l in range(0,s):
-        l_real = l+1
-        Sigma_c = np.zeros((s,s))
-        for i in range(0,s):
-            i_real = i + 1
-            for j in range(0,s):
-                j_real = j + 1
-                if j == l:
-                    sum_k = 0
-                    for k in range(infty):
-                        sum_I = 0
-                        for I in range(t + s + k - i_real - j_real + 1):
-                            sum_I += expn(I+1, (1 + rician_k) / gamma)
-                        
-                        sum_k += factorial(t + s + k - i_real - j_real) * sum_I \
-                            / (factorial(k) * factorial(t + k - j_real))
-                    
-                    Sigma_c[i][j] = sum_k
-                else:
-                    Sigma_c[i][j] = factorial(t + s - i_real - j_real) \
-                        / factorial(t - j_real) \
-                        * hyp1f1(t + s - i_real - j_real + 1, t - j_real + 1, t * rician_k)
-                            
-        sum_l += det(Sigma_c)
-    
-    prod = 1
-    for k in range(1,s+1):
-        prod *= factorial(s - k)
-        
-    return np.abs(np.exp(-(s * t * rician_k)) / prod * np.exp((1 + rician_k) / gamma) / np.log(2) * sum_l)
-
-def delta_1(m,b):
-    '''
-    Delta_1 used in ga_expect_2
-    '''
-    result = 0
-    for i in range(m):
-        result += expn(i+1, b ** (-1))
-    
-    # print(str(m) + ' ' + str(b))
-    # print(result)
-    return result
-
-def delta_2(m,b):
-    '''
-    Delta_2 used in ga_expect_2
-    '''
-    sum_result = 0
-    # print(m)
-    # print(b)
-    for p in range(m):
-        if b ** (-1) > 10:
-            sum_result += 0
-        else:
-            sum_result += (-1) ** p * binom(m-1, p) \
-                * meijerg([[],[p-(m-1),p-(m-1),p-(m-1)]],[[0,p-m,p-m,p-m],[]],1/b)
-    
-    if sum_result == 0:
-        result = 0
-    else:
-        result = 2 * np.exp(1/b) / b ** m * sum_result
-    return result
-
-def ga_expect_2(s,t,rician_k,gamma,infty):
-    '''
-    Definition of Expect_value in Gaussian Approximation,
-    i.e.,
-    E[gamma ** 2].
-    
-    s = min(transmitter_antenna, receiver_antenna)
-    t = max(transmitter_antenna, receiver_antenna)
-    rician_k: Rician factor
-    gamma: SNR
-    infty: loop of infinity
-    '''
-
-    sum_l = 0
-    for l in range(1,s+1):
-        for n in range(1,s+1):
-            Sigma_v = np.zeros((s,s))
-            for i in range(n):
-                i_real = i + 1
-                for j in range(n):
-                    j_real = j + 1
-                    if np.all([j_real == l, j_real == n]):
-                        sum_k = 0
-                        # print(sum_k)
-                        for k in range(infty):
-                            sum_k += (t * rician_k) ** k \
-                                * delta_2(t+s+k-i_real-j_real+1, (1 + rician_k)/gamma)\
-                                    / (factorial(k) * factorial(t + k - j))
-                        Sigma_v[i,j] = sum_k
-                        # print(sum_k)
-                    elif np.all([np.any([j_real == l, j_real == n]), l != n]):
-                        sum_k = 0
-                        for k in range(infty):
-                            sum_k += factorial(t + s + k - i_real - j_real)\
-                                * (t * rician_k) ** k \
-                                    * delta_1(t + s + k - i_real - j_real + 1, (1 + rician_k)/gamma)\
-                                        / (factorial(k) * factorial(t + k - j))
-                        Sigma_v[i,j] = sum_k
-                    else:
-                        Sigma_v[i,j] = factorial(t + s - i - j) / factorial(t - j)\
-                            * hyp1f1(t + s - i_real - j_real + 1, t - j_real + 1, t * rician_k)
-            
-            sum_l += det(Sigma_v)
-    
-    prod_k = 1
-    for k in range (1,s+1):
-        prod_k *= factorial(s - k)
-    
-    return np.abs(np.exp(- s * t * rician_k) / prod_k * 1 / (np.log(2) ** 2) * sum_l)
-                                    
 def gaussian_q(x):
     '''
-    Gaussian Q function
-    '''                
-    return 0.5 - 0.5 * erf(x/np.sqrt(2)) 
-
-def gaussian_approximation(trans_antenna,
-                           recev_antenna,
-                           rician_k,
-                           r_s,
-                           zeta,
-                           p_u,
-                           sigma,
-                           infty_loop):
+    Gaussian Q-function:
+    `Q(x)`.
     '''
-    Gaussian Approximation
-    '''
-    s = np.min([trans_antenna, recev_antenna])
-    t = np.max([trans_antenna,recev_antenna])
-    gamma = p_u / sigma
-    Expect_val = ga_expect(s,t,rician_k,gamma,infty_loop)
-    Var =  np.abs(ga_expect_2(s,t,rician_k,gamma,infty_loop) - Expect_val ** 2)
-    # print(gamma)
-    # print(Expect_val)
-    # print(Var)
-    # print(ga_expect_2(s,t,rician_k,gamma,infty_loop))
-    # print(gaussian_q((r_s/(1-zeta) - Expect_val) / np.sqrt(Var)))
-    
-    
-    # print((r_s/(1-zeta) - Expect_val))
-    # print(Var)
-    # print((r_s/(1-zeta) - Expect_val) / np.sqrt(Var))
-    
+    return 0.5- 0.5 * erf(x/np.sqrt(2))
 
-    return gaussian_q((r_s/(1-zeta) - Expect_val) / np.sqrt(Var))
+def ga_mu_D(tx_num,rx_num,SNR):
+    '''
+    Expected Value of D in det(D).
+    '''
     
+    n = np.min([tx_num,rx_num])
+    m = np.max([tx_num,rx_num])
+    # mu_D
+    sum_mu_D = 0
+    for i in range(1,n+1):
+        sum_mu_D += SNR ** i * comb(n,i) * factorial(m)/factorial(m-i)
+    
+    return 1 + sum_mu_D
+
+
+def ga_sigma_D(tx_num,rx_num,SNR):
+    '''
+    Variance of D in det(D)
+    '''
+    
+    n = np.min([tx_num,rx_num])
+    m = np.max([tx_num,rx_num])
+    # sigma_D
+    sigma_D = 0
+    for i in range(1,n+1):
+        for j in range(1,n+1):
+            sigma_D_k = 0
+            start_k = np.max([0,i+j-n])
+            end_k = np.min([i,j])
+            for k in range(start_k,end_k+1):
+                sigma_D_k += k / (m - k + 1) * comb(n,i) * comb(n-i,j-k) * comb(i,k)
+                
+            sigma_D += SNR ** (i + j) \
+                * sigma_D_k * factorial(m)/(factorial(m - i)) * factorial(m)/(factorial(m - j)) 
+            # print(j)
+            # print(SNR ** (i + j) * factorial(t)/(factorial(t) - i) * factorial(t))
+    return sigma_D
+def gaussian_approximation_su(tx_num,rx_num,SNR,target_SNR):
+    '''
+    Gaussian Q-function for gaussian approximation
+    with determinent D = det(I + SNR W).
+    Args:
+        tx_num (int): Antenna number of transmitter
+        rx_num (int): Antenna number of receiver
+        SNR (float): SNR parameter of Wishart matrix.
+        target_SNR (float): Target SNR
+    '''
+    mu_D = ga_mu_D(tx_num,rx_num,SNR)
+    sigma_D = ga_sigma_D(tx_num,rx_num,SNR)     
+    E_c = np.log2(mu_D) - np.log2(E) / 2 * sigma_D / mu_D ** 2
+    Var_c = (np.log2(E) ** 2) * sigma_D / mu_D ** 2 \
+        - 0.25 * np.log2(E) ** 2 * sigma_D ** 2 / mu_D ** 4
+    
+    return gaussian_q((target_SNR - E_c )/ np.sqrt(Var_c))
+
+def outage_ud_fix(Ku,Rs,zeta,var_error,m,N):
+    '''
+    Outage of UD transmission link (fix).
+    '''
+    target_SNR = 2 ** (Rs / (1 - zeta)) - 1
+    return (target_SNR * N * Ku * var_error / (target_SNR * N * Ku * var_error + 1)) ** (m * Ku)
+
+def outage_ue_fix(Ke,m,M,N,Rs,zeta):
+    '''
+    Outage of UE transmission link (fix).
+    '''
+    
+    target_SNR = 2 ** (Rs / (1 - zeta)) - 1
+
+    
+    return (target_SNR * (N - M) * Ke / (target_SNR * (N - M) * Ke + m)) ** Ke
+
+def outage_ud_adapt(Ku,Rs,zeta,var_error,n,N):
+    '''
+    Outage of UD transmission link (adapt).
+    '''
+    target_SNR = 2 ** (Rs / (1 - zeta)) - 1
+    return (target_SNR * N * Ku * var_error / (target_SNR * N * Ku * var_error + 1)) ** (n * Ku)
+
+def outage_ue_adapt(Ke,n,N,Rs,zeta):
+    '''
+    Outage of UE transmission link (fix).
+    '''
+    
+    target_SNR = 2 ** (Rs / (1 - zeta)) - 1
+
+    return (target_SNR * (N - n) * Ke / (target_SNR * (N - n) * Ke + n)) ** Ke
+
+def estimation_error(matrix_shape,sigma_e):
+    if platform.system() == 'Linux':
+        re = cp.random.normal(0,np.sqrt(sigma_e/2),size=matrix_shape)
+        im = cp.random.normal(0,np.sqrt(sigma_e/2),size=matrix_shape)
+        
+        result = re + 1j * im
+        
+        return result
+        
+    elif platform.system() == 'Darwin':
+        re = np.random.normal(0,np.sqrt(sigma_e/2),size=matrix_shape)
+        im = np.random.normal(0,np.sqrt(sigma_e/2),size=matrix_shape)
+        
+        result = re + 1j * im
+        
+        return result
+    
+    else:
+        print("Error: Wrong OS type", file=sys.stderr)
+        sys.exit(1)
