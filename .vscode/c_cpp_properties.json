@@ -1,15 +1,15 @@
 {
   "configurations": [
     {
-      "name": "macos-clang-x64",
+      "name": "macos-clang-arm64",
       "includePath": [
         "${workspaceFolder}/**",
         "/usr/local/include/**"
       ],
-      "compilerPath": "/usr/local/opt/llvm/bin/clang",
+      "compilerPath": "/opt/homebrew/opt/llvm/bin/clang",
       "cStandard": "${default}",
       "cppStandard": "${default}",
-      "intelliSenseMode": "macos-clang-x64",
+      "intelliSenseMode": "macos-clang-arm64",
       "compilerArgs": []
     }
   ],

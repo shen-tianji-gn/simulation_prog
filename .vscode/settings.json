@@ -28,5 +28,9 @@
     "**/.*/**",
     "**/.vscode",
     "**/.vscode/**"
-  ]
+  ],
+  "cSpell.enableFiletypes": [
+    "python"
+  ],
+  "julia.environmentPath": "/home/shin/.julia/environments/v1.9"
 }

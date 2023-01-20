@@ -2,7 +2,7 @@ import numpy as np
 import platform
 import sys, os
 from argparse import ArgumentParser
-from joblib import Parallel, delayed
+# from joblib import Parallel, delayed
 
 if platform.system() == 'Linux':
     import cupy as cp
@@ -13,9 +13,10 @@ else:
     print("Error: Wrong OS type", file=sys.stderr)
     sys.exit(1)
 from numpy.linalg import det
+from numpy.linalg import norm
 
 
-from lib.customize_func import gaussian_approximation_su, dbm2watt, hermitian
+from lib.customize_func import exact_su, gaussian_approximation_su, dbm2watt, hermitian
 from lib.output import output
 
 from par_lib import par_lib
@@ -58,16 +59,16 @@ def main(argv):
     R_s = par_lib.R_s
     zeta = par_lib.zeta
     Sigma = par_lib.sigma
-    Sigma_e = par_lib.sigma_e    
-    
+    # Sigma_e = par_lib.sigma_e   
 
     K_s, K_d, simu_max = parser()
+    R_c = K_s 
     
     P_s = np.around(np.arange(P_min, P_max + P_inst, P_inst), 1)
     
     r_s = R_s
     sigma = dbm2watt(Sigma)
-    sigma_e = dbm2watt(Sigma_e)
+    # sigma_e = dbm2watt(Sigma_e)
     
     anal = np.zeros(len(P_s))
     simu = np.zeros(len(P_s))
@@ -77,7 +78,8 @@ def main(argv):
         p_s = dbm2watt(P_s[P_s_index])
 
         # analysis
-        anal[P_s_index] = 1 - gaussian_approximation_su(K_s, K_d, p_s / (K_s * sigma), r_s/zeta)
+        anal[P_s_index] = exact_su(K_s, K_d, p_s / (K_s * sigma), R_c, r_s/zeta)
+        # 1 - gaussian_approximation_su(K_s, K_d, p_s / (K_s * sigma), R_c, r_s/zeta)
         
         print('Power= ' + str(np.around(P_s[P_s_index],1))
               + ' Outage_Anal= ' + str(anal[P_s_index])
@@ -91,9 +93,8 @@ def main(argv):
             simu_time += 1
             H_su = channel((K_d,K_s))
             
-            simu_rate = zeta \
-                * np.log2(np.abs(det(np.eye(K_d) + p_s / (K_s * sigma)
-                                     * np.dot(H_su, hermitian(H_su)))))
+            simu_rate = zeta * R_c \
+                * np.log2(1 + p_s * norm(H_su,'fro') ** 2 / (K_s ** 2 * sigma))
             
             if simu_rate < r_s:
                 simulation_counter += 1
@@ -122,12 +123,16 @@ def main(argv):
     
     os.chdir(directory)
     
-    file_anal = './anal.txt'
-    file_simu = './simu.txt'
+    file_anal = './anal_ex.txt'
+    # file_simu = './simu.txt'
     
-    file_path = [file_anal,file_simu]
+    file_path = [file_anal,
+                # file_simu
+                ]
     
-    file_results = [anal,simu]
+    file_results = [anal,
+                    # simu
+                    ]
     
     for _ in range(len(file_path)):
         output(file_path[_],P_s,len(P_s),file_results[_])

@@ -3,7 +3,7 @@ import numpy as np
 # import cupy as np
 
 # scipy matrix dependencies
-from numpy.linalg import det
+from numpy.linalg import norm 
 from scipy.special import comb
 
 # system dependencies
@@ -15,7 +15,7 @@ from argparse import ArgumentParser
 from lib.customize_func import channel_vector, estimation_error, \
                                hermitian, \
                                dbm2watt, \
-                               gaussian_approximation_su, \
+                               exact_su, \
                                outage_ud_adapt, \
                                outage_ue_adapt
 from lib.output import output
@@ -28,7 +28,7 @@ from par_lib import par_lib
 # from coefficient import a_coefficient
 
 def parser():
-    usage = 'Usage: python {} [--Ku <Number of Ku>] [--N <Number of N>] [--M <Number of M>] [--Ko <Number of Ko>] [--Ke <Number of Ke>] [--Pu <Output Power of Device (dBm)>] [--Period <Simulation period>] [--help]'
+    usage = 'Usage: python {} [--N <Number of N>] [--Ku <Number of Ku>] [--Ke <Number of Ke>] [--Pu <Output Power of Device (dBm)>] [--Period <Simulation period>] [--GPU <Simulation GPU ID>] [--help]'
     argparser = ArgumentParser(usage=usage)
     argparser.add_argument('-ku', '--Ku', type=int, 
                             required=True, 
@@ -54,6 +54,10 @@ def parser():
                             required=True,
                             dest='period',
                             help='Simulation period')
+    argparser.add_argument('-gpu', '--GPU', type=int,
+                           required=False,
+                           dest='GPU',
+                           help='The index of CUDA GPU')
     arg = argparser.parse_args()
     K_u = arg.Ku
     N = arg.N
@@ -61,14 +65,20 @@ def parser():
     K_e = arg.Ke
     Pu = arg.Pu
     period = arg.period
+    
+    if arg.GPU is None:
+        GPU = 0
+    else:
+        GPU = arg.GPU
 
-    return K_u,N,K_s,K_e,Pu,period
+    return K_u,N,K_s,K_e,Pu,period,GPU
 
 
 def main(argv):
     ## global library
     
-    K_u, N, K_s, K_e, P_u, simulation_max = parser()
+    K_u, N, K_s, K_e, P_u, simulation_max,GPU = parser()
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(GPU)
     K_s = K_s
     K_u = K_u
     K_e = K_e
@@ -79,16 +89,21 @@ def main(argv):
     P_inst = par_lib.P_inst
     # P_u_inst = 0.5 #dBm
     R_s = par_lib.R_s
+    R_c = par_lib.R_c
     zeta = par_lib.zeta
     Sigma = par_lib.sigma
     Sigma_e = par_lib.sigma_e
-    
+    alpha_s = par_lib.alpha_s
+    alpha_ud = par_lib.alpha_ud
+    alpha_ue = par_lib.alpha_ue
+    counter_max = par_lib.counter_max
 
 
     P_s = np.around(np.arange(P_min,P_max+P_inst,P_inst),1)
 
     # unit transmformation
     r_s = R_s
+    r_c = R_c
     sigma = dbm2watt(Sigma)
     sigma_e = dbm2watt(Sigma_e)
 
@@ -104,8 +119,7 @@ def main(argv):
 
         # counter initial
         p_s = dbm2watt(np.around(P_s[P_s_index],1))
-        p_u = dbm2watt(np.around(P_u,1)) / K_u
-
+        p_u = dbm2watt(np.around(P_u,1))
         
 
         simulation_time = 0
@@ -123,9 +137,18 @@ def main(argv):
             if n > 0:
                 
 
-                s_r_throughput = (gaussian_approximation_su(K_s, K_u, p_s/(K_s * sigma), r_s/zeta))
-                r_d_throughput = (1 - outage_ud_adapt(K_u,r_s,zeta,sigma_e,n,N))
-                r_e_throughput = (1 - outage_ue_adapt(K_e,n,N,r_s,zeta))
+                s_r_throughput = 1 - exact_su(K_s, K_u, p_s/(K_s * sigma * alpha_s), r_c, r_s/zeta)
+                r_d_throughput = 1 - outage_ud_adapt(K_u,
+                                                      r_s,
+                                                      zeta,
+                                                      sigma_e,
+                                                      n,
+                                                      N)
+                r_e_throughput = 1 - outage_ue_adapt(K_e,
+                                                     n,
+                                                     N,
+                                                     r_s,
+                                                     zeta)
                 # outage D
                 sum_anal_throughput_d += comb(N,n) * s_r_throughput ** n * (1 - s_r_throughput) ** (N-n) * (r_d_throughput)
                 
@@ -158,8 +181,8 @@ def main(argv):
             for n in range(N):
                 
                 H_s_u = H_sr[n].T 
-                c_hr[n] = zeta * np.log2(np.abs(det(np.eye(K_s) + p_s / (K_s * sigma) \
-                    * np.dot(H_s_u,hermitian(H_s_u)))))                
+                c_hr[n] = zeta * r_c * np.log2(np.abs(1 + p_s / (K_s * alpha_s * r_c * sigma) \
+                    * norm(H_s_u, 'fro') ** 2))        
                 
                 if c_hr[n] >= r_s:
                     relay_counter += 1
@@ -168,12 +191,16 @@ def main(argv):
             ## fix scheme
 
             # rayleigh
-            h_rd = channel_vector(K_u,1,relay_counter,0,'rayleigh')
+            h_rd = channel_vector(K_u,1,relay_counter,0,'rayleigh',GPU_ID=GPU)
             h_rd_e = estimation_error((K_u * (relay_counter), 1), sigma_e)
-            h_jd_e = estimation_error((K_u * (N - relay_counter), 1), sigma_e)
-            H_re = channel_vector(K_u,K_e,relay_counter,0,'rayleigh')
-            H_je = channel_vector(K_u,K_e,N-relay_counter,0,'rayleigh')
+            H_re = channel_vector(K_u,K_e,relay_counter,0,'rayleigh',GPU_ID=GPU)
             
+            if relay_counter < N:
+                h_jd_e = estimation_error((K_u * (N - relay_counter), 1), sigma_e)
+                H_je = channel_vector(K_u,K_e,N-relay_counter,0,'rayleigh',GPU_ID=GPU)
+            else:
+                h_jd_e = 0
+                H_je = 0
             
             if relay_counter == 0:
                 R_d = 0
@@ -190,8 +217,10 @@ def main(argv):
                 sum_H_je_2 = np.abs(sum_H_je * np.conjugate(sum_H_je))
             
                 
-                R_d = (1 - zeta) * np.log2(1 + p_u / K_u * sum_h_rd_2 / (p_u / K_u * sum_h_ud_err_2 + sigma))
-                R_e = (1 - zeta) * np.log2(1 + p_u / K_u * sum_H_re_2 / (p_u / K_u * sum_H_je_2 + sigma))
+                R_d = (1 - zeta) * np.log2(1 + p_u / K_u * sum_h_rd_2 * alpha_ud ** (-1) 
+                                           / (p_u / K_u * sum_h_ud_err_2 * alpha_ud ** (-1) + sigma))
+                R_e = (1 - zeta) * np.log2(1 + p_u / K_u * sum_H_re_2 * alpha_ue ** (-1)
+                                           / (p_u / K_u * sum_H_je_2 * alpha_ue ** (-1) + sigma))
                 
             # print(R_d)
             # print(r_s)
@@ -205,18 +234,23 @@ def main(argv):
                 + 'Power= ' + str(np.around(P_s[P_s_index],1)) 
                 + ' Simu_D= ' + str(np.around(adapt_d_counter / simulation_time, 2)) 
                 + ' Simu_E= ' + str(np.around(adapt_e_counter / simulation_time, 2)) 
-                + ' Period= ' + str(simulation_time).zfill(6) 
+                + ' Period= ' + str(simulation_time).zfill(int(np.ceil(np.log10(simulation_max)))) 
                 , end='')
             
             
-            if simulation_time >= simulation_max:
+            if np.any([
+                np.all([
+                    adapt_d_counter >= counter_max,
+                    adapt_e_counter >= counter_max]),
+                simulation_time >= simulation_max]):
+                adapt_simu_d[P_s_index] = adapt_d_counter / simulation_time
+                adapt_simu_e[P_s_index] = adapt_e_counter / simulation_time
+                print('\n', end='')
                 break
             
 
         
-        adapt_simu_d[P_s_index] = adapt_d_counter / simulation_time
-        adapt_simu_e[P_s_index] = adapt_e_counter / simulation_time
-        print('\n', end='')
+        
 
     # make dir if not exist
     directory = 'result_txts/ps/adapt/K_s=' + str(K_s) + '_K_u='+ str(K_u) + '_N=' + str(N)  + '/'
@@ -248,7 +282,7 @@ def main(argv):
 
 
     for _ in range(len(file_path)):
-        output(file_path[_],P_s,P_s_index,file_results[_])
+        output(file_path[_],P_s,len(P_s),file_results[_])
 
     print('File output finished!', end='\n')
 

@@ -6,7 +6,7 @@ if platform.system() == 'Linux':
 
 from numpy import matrix, pi as PI
 from numpy import e as E
-from scipy.special import gammaincc, factorial, binom
+from scipy.special import gammaincc, factorial, binom, gammainc
 from scipy.special import gamma
 from scipy.special import expn
 from scipy.special import erf
@@ -531,44 +531,28 @@ def gaussian_q(x):
     '''
     return 0.5- 0.5 * erf(x/np.sqrt(2))
 
-def ga_mu_D(tx_num,rx_num,SNR):
+def ga_mu_C(tx_num,rx_num,SNR,R):
     '''
     Expected Value of D in det(D).
     '''
     
-    n = np.min([tx_num,rx_num])
-    m = np.max([tx_num,rx_num])
-    # mu_D
-    sum_mu_D = 0
-    for i in range(1,n+1):
-        sum_mu_D += SNR ** i * comb(n,i) * factorial(m)/factorial(m-i)
+    mu_C = R * np.log2(1 + SNR * rx_num / R) \
+        - R * np.log2(E) * SNR ** 2 * rx_num * tx_num \
+        / (2 * tx_num ** 2 * (R + SNR * rx_num) ** 2)
     
-    return 1 + sum_mu_D
+    return mu_C
 
-
-def ga_sigma_D(tx_num,rx_num,SNR):
+def ga_sigma_C(tx_num,rx_num,SNR,R):
     '''
     Variance of D in det(D)
     '''
     
-    n = np.min([tx_num,rx_num])
-    m = np.max([tx_num,rx_num])
-    # sigma_D
-    sigma_D = 0
-    for i in range(1,n+1):
-        for j in range(1,n+1):
-            sigma_D_k = 0
-            start_k = np.max([0,i+j-n])
-            end_k = np.min([i,j])
-            for k in range(start_k,end_k+1):
-                sigma_D_k += k / (m - k + 1) * comb(n,i) * comb(n-i,j-k) * comb(i,k)
-                
-            sigma_D += SNR ** (i + j) \
-                * sigma_D_k * factorial(m)/(factorial(m - i)) * factorial(m)/(factorial(m - j)) 
-            # print(j)
-            # print(SNR ** (i + j) * factorial(t)/(factorial(t) - i) * factorial(t))
-    return sigma_D
-def gaussian_approximation_su(tx_num,rx_num,SNR,target_SNR):
+    sigma_C = (R * SNR * np.log2(E) / (tx_num * (R + SNR * rx_num))) ** 2 \
+        * tx_num * rx_num \
+        / (1 - SNR ** 2 * tx_num * rx_num / (tx_num ** 2 * (R + SNR * rx_num) ** 2))
+    
+    return sigma_C
+def gaussian_approximation_su(tx_num,rx_num,SNR,R,target_SNR):
     '''
     Gaussian Q-function for gaussian approximation
     with determinent D = det(I + SNR W).
@@ -576,15 +560,29 @@ def gaussian_approximation_su(tx_num,rx_num,SNR,target_SNR):
         tx_num (int): Antenna number of transmitter
         rx_num (int): Antenna number of receiver
         SNR (float): SNR parameter of Wishart matrix.
+        R (float): Code rate of STBC
         target_SNR (float): Target SNR
     '''
-    mu_D = ga_mu_D(tx_num,rx_num,SNR)
-    sigma_D = ga_sigma_D(tx_num,rx_num,SNR)     
-    E_c = np.log2(mu_D) - np.log2(E) / 2 * sigma_D / mu_D ** 2
-    Var_c = (np.log2(E) ** 2) * sigma_D / mu_D ** 2 \
-        - 0.25 * np.log2(E) ** 2 * sigma_D ** 2 / mu_D ** 4
-    
-    return gaussian_q((target_SNR - E_c )/ np.sqrt(Var_c))
+    mu_C = ga_mu_C(tx_num,rx_num,SNR,R)
+    sigma_C_2 = ga_sigma_C(tx_num,rx_num,SNR,R)    
+    # print(mu_C)
+    # print(sigma_C_2)
+    return gaussian_q((target_SNR - mu_C)/ np.sqrt(sigma_C_2))
+
+def exact_su(tx_num,rx_num,SNR,R,target_SNR):
+    '''
+    Exact result
+    '''
+    n = np.max([tx_num,rx_num])
+    p = np.min([tx_num,rx_num])
+    # re1 = (n+(n+1-p)) * p/2
+    re1 = n * p
+    snr = (2 ** (target_SNR / R) - 1) * (R / SNR)
+    result =  gammainc(re1, snr) 
+
+    return result
+
+
 
 def outage_ud_fix(Ku,Rs,zeta,var_error,m,N):
     '''
@@ -626,7 +624,7 @@ def estimation_error(matrix_shape,sigma_e):
         
         result = re + 1j * im
         
-        return result
+        return cp.asnumpy(result)
         
     elif platform.system() == 'Darwin':
         re = np.random.normal(0,np.sqrt(sigma_e/2),size=matrix_shape)
