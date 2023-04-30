@@ -100,7 +100,7 @@ def main(argv):
     P_inst = par_lib.P_inst
     # P_u_inst = 0.5 #dBm
     R_s = par_lib.R_s
-    R_c = par_lib.R_c
+    R_c = par_lib.max_R_c(K_s)
     zeta = par_lib.zeta
     Sigma = par_lib.sigma
     Sigma_e = par_lib.sigma_e

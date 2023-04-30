@@ -193,13 +193,13 @@ def main(argv):
     
     # make the zoom-in plot:
     x1 = -5
-    x2 = 5
+    x2 = 10
     
     y1 = 0.995
     y2 = 1
     
     # axins = zoomed_inset_axes(axes, 5, loc=3)
-    axins = inset_axes(axes, 1.5, 1.5, loc='upper left', bbox_to_anchor=(0.17, 0.75), bbox_transform=axes.figure.transFigure)
+    axins = inset_axes(axes, 2, 1.5, loc='upper left', bbox_to_anchor=(0.17, 0.75), bbox_transform=axes.figure.transFigure)
     # fixed
     # K=2,N=5       
     axins.plot(
@@ -213,17 +213,17 @@ def main(argv):
         markersize = 10
     ) # red
 
-    axins.plot(
-        fixed_k_2_n_5_simu_e_x,
-        fixed_k_2_n_5_simu_e_y,
-        color=[0.6350, 0.0780, 0.1840],
-        linestyle = 'None',
-        marker = 'o',
-        markerfacecolor='None',
-        linewidth = 2,
-        markersize = 10,
-        label = '${K_{\mathtt{U}}}=2$, Fixed'
-    ) # red
+    # axins.plot(
+    #     fixed_k_2_n_5_simu_e_x,
+    #     fixed_k_2_n_5_simu_e_y,
+    #     color=[0.6350, 0.0780, 0.1840],
+    #     linestyle = 'None',
+    #     marker = 'o',
+    #     markerfacecolor='None',
+    #     linewidth = 2,
+    #     markersize = 10,
+    #     label = '${K_{\mathtt{U}}}=2$, Fixed'
+    # ) # red
 
     # K=4,N=5
     axins.plot(
@@ -237,16 +237,16 @@ def main(argv):
         markersize = 10
     ) # blue
 
-    axins.plot(
-        fixed_k_4_n_5_simu_e_x,
-        fixed_k_4_n_5_simu_e_y,
-        color=[0, 0.4470, 0.7410],
-        linestyle = 'None',
-        marker = 's',
-        markerfacecolor='None',
-        linewidth = 2, markersize = 10, 
-        label = '${K_{\mathtt{U}}}=4$, Fixed'
-    ) # blue
+    # axins.plot(
+    #     fixed_k_4_n_5_simu_e_x,
+    #     fixed_k_4_n_5_simu_e_y,
+    #     color=[0, 0.4470, 0.7410],
+    #     linestyle = 'None',
+    #     marker = 's',
+    #     markerfacecolor='None',
+    #     linewidth = 2, markersize = 10, 
+    #     label = '${K_{\mathtt{U}}}=4$, Fixed'
+    # ) # blue
 
     
     # adapt
@@ -262,17 +262,17 @@ def main(argv):
         markersize = 10
     ) # red
 
-    axins.plot(
-        adapt_k_2_n_5_simu_e_x,
-        adapt_k_2_n_5_simu_e_y,
-        color=[0.9290, 0.6940, 0.1250],
-        linestyle = 'None',
-        marker = '<',
-        markerfacecolor='None',
-        linewidth = 2,
-        markersize = 10, 
-        label = '${K_{\mathtt{U}}}=2$, Adaptive'
-    ) # red
+    # axins.plot(
+    #     adapt_k_2_n_5_simu_e_x,
+    #     adapt_k_2_n_5_simu_e_y,
+    #     color=[0.9290, 0.6940, 0.1250],
+    #     linestyle = 'None',
+    #     marker = '<',
+    #     markerfacecolor='None',
+    #     linewidth = 2,
+    #     markersize = 10, 
+    #     label = '${K_{\mathtt{U}}}=2$, Adaptive'
+    # ) # red
     
     # K=4,N=5
     axins.plot(
@@ -286,16 +286,16 @@ def main(argv):
         markersize = 10
     ) # blue
 
-    axins.plot(
-        adapt_k_4_n_5_simu_e_x,
-        adapt_k_4_n_5_simu_e_y,
-        color=[0.4940, 0.1840, 0.5560],
-        linestyle = 'None',
-        marker = '2',
-        markerfacecolor='None',
-        linewidth = 2,
-        markersize = 10,
-        label = '${K_{\mathtt{U}}}=4$, Adaptive') # blue
+    # axins.plot(
+    #     adapt_k_4_n_5_simu_e_x,
+    #     adapt_k_4_n_5_simu_e_y,
+    #     color=[0.4940, 0.1840, 0.5560],
+    #     linestyle = 'None',
+    #     marker = '2',
+    #     markerfacecolor='None',
+    #     linewidth = 2,
+    #     markersize = 10,
+    #     label = '${K_{\mathtt{U}}}=4$, Adaptive') # blue
 
     axins.set_xlim(x1,x2)
     axins.set_ylim(y1,y2)

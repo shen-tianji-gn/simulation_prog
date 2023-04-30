@@ -107,7 +107,7 @@ def main(argv):
     P_inst = par_lib.P_inst
     # P_u_inst = 0.5 #dBm
     R_s = par_lib.R_s
-    R_c = par_lib.R_c
+    R_c = par_lib.max_R_c(K_s)
     zeta = par_lib.zeta
     Sigma = par_lib.sigma
     Sigma_e = par_lib.sigma_e
@@ -261,9 +261,9 @@ def main(argv):
             
             
             if np.any([
-                np.all([
-                    fixed_d_counter >= counter_max,
-                    fixed_e_counter >= counter_max]),
+                # np.all([
+                #     fixed_d_counter >= counter_max,
+                #     fixed_e_counter >= counter_max]),
                 simulation_time >= simulation_max]):
                 fixed_simu_d[P_s_index] = fixed_d_counter / simulation_time
                 fixed_simu_e[P_s_index] = fixed_e_counter / simulation_time

@@ -5,7 +5,7 @@ def file_read(x_axis,K_s,type_D,K_u,N,a_or_s,d_or_e,**kw):
     '''
     Read the data in txt files.
 
-    x_axis: 'ps', 'ku', 'zeta', 'alpha_ue'
+    x_axis: 'ps', 'ku', 'zeta', 'alpha_ue', 'rs', 'N'
     
     type: 'adapt', 'adapt_opt', 'fixed', 'fixed_opt'
 
@@ -24,7 +24,7 @@ def file_read(x_axis,K_s,type_D,K_u,N,a_or_s,d_or_e,**kw):
     '''
     x = []
     y = []
-    x_axis_set = np.array(['ps','ku','zeta','alpha_ue'])
+    x_axis_set = np.array(['ps','ku','zeta','alpha_ue','rs'])
     type_set = np.array(['adapt','adapt_opt','fixed','fixed_opt','adapt_nostbc','fixed_nostbc'])
     adapt_set = np.array(['adapt','adapt_opt','adapt_nostbc'])
     a_or_s_set = np.array(['anal','simu'])

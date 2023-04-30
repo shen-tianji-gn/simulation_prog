@@ -185,7 +185,7 @@ def main(argv):
     ) # red
     plt.semilogy(
         adapt_op_k_2_n_5_simu_e_x,
-        outage2throughput(adapt_op_k_2_n_5_simu_e_y),
+        adapt_op_k_2_n_5_simu_e_y,
         color=mlc.blue,
         linestyle = ':',
         marker = '2',
@@ -223,7 +223,7 @@ def main(argv):
 
     plt.semilogy(
         adapt_op_k_4_n_5_simu_e_x,
-        outage2throughput(adapt_op_k_4_n_5_simu_e_y),
+        adapt_op_k_4_n_5_simu_e_y,
         color=mlc.purple,
         linestyle = ':',
         marker = '3',
@@ -235,13 +235,13 @@ def main(argv):
     
         # make the zoom-in plot:
     x1 = -5
-    x2 = 5
+    x2 = 10
     
     y1 = 0.995
     y2 = 1
     
     # axins = zoomed_inset_axes(axes, 5, loc=3)
-    axins = inset_axes(axes, 1.5, 1.5, loc='upper left', bbox_to_anchor=(0.17, 0.85), bbox_transform=axes.figure.transFigure)
+    axins = inset_axes(axes, 2, 1.5, loc='upper left', bbox_to_anchor=(0.17, 0.85), bbox_transform=axes.figure.transFigure)
     # fixed
     # K=2,N=5
         
@@ -256,17 +256,17 @@ def main(argv):
         markersize = 10
     ) # red
 
-    axins.plot(
-        fixed_k_2_n_5_simu_e_x,
-        fixed_k_2_n_5_simu_e_y,
-        color=mlc.red, 
-        linestyle = 'None',
-        marker = 'o',
-        markerfacecolor='None',
-        linewidth = 2,
-        markersize = 10,
-        label = '${K_{\mathtt{U}}}=2$, Random'
-    ) # red
+    # axins.plot(
+    #     fixed_k_2_n_5_simu_e_x,
+    #     fixed_k_2_n_5_simu_e_y,
+    #     color=mlc.red, 
+    #     linestyle = 'None',
+    #     marker = 'o',
+    #     markerfacecolor='None',
+    #     linewidth = 2,
+    #     markersize = 10,
+    #     label = '${K_{\mathtt{U}}}=2$, Random'
+    # ) # red
 
     axins.plot(
         fixed_op_k_2_n_5_simu_e_x,
@@ -292,17 +292,17 @@ def main(argv):
         markersize = 10
     ) # yellow
 
-    axins.plot(
-        fixed_k_4_n_5_simu_e_x,
-        fixed_k_4_n_5_simu_e_y,
-        color=mlc.yellow,
-        linestyle = 'None',
-        marker = '^',
-        markerfacecolor='None',
-        linewidth = 2,
-        markersize = 10,
-        label = '${K_{\mathtt{U}}}=4$, Random'
-    ) # yellow
+    # axins.plot(
+    #     fixed_k_4_n_5_simu_e_x,
+    #     fixed_k_4_n_5_simu_e_y,
+    #     color=mlc.yellow,
+    #     linestyle = 'None',
+    #     marker = '^',
+    #     markerfacecolor='None',
+    #     linewidth = 2,
+    #     markersize = 10,
+    #     label = '${K_{\mathtt{U}}}=4$, Random'
+    # ) # yellow
     axins.plot(
         fixed_op_k_4_n_5_simu_e_x,
         fixed_op_k_4_n_5_simu_e_y,
@@ -331,20 +331,21 @@ def main(argv):
         markersize = 10
     ) # red
 
-    axins.plot(
-        adapt_k_2_n_5_simu_e_x,
-        adapt_k_2_n_5_simu_e_y,
-        color=mlc.blue,
-        linestyle = 'None',
-        marker = '+',
-        markerfacecolor='None',
-        linewidth = 2,
-        markersize = 10, 
-        label = '${K_{\mathtt{U}}}=2$, Adaptive'
-    ) # red
+    # axins.plot(
+    #     adapt_k_2_n_5_simu_e_x,
+    #     adapt_k_2_n_5_simu_e_y,
+    #     color=mlc.blue,
+    #     linestyle = 'None',
+    #     marker = '+',
+    #     markerfacecolor='None',
+    #     linewidth = 2,
+    #     markersize = 10, 
+    #     label = '${K_{\mathtt{U}}}=2$, Adaptive'
+    # ) # red
+    
     axins.plot(
         adapt_op_k_2_n_5_simu_e_x,
-        outage2throughput(adapt_op_k_2_n_5_simu_e_y),
+        adapt_op_k_2_n_5_simu_e_y,
         color=mlc.blue,
         linestyle = ':',
         marker = '2',
@@ -368,21 +369,21 @@ def main(argv):
         markersize = 10
     ) # yellow
 
-    axins.plot(
-        adapt_k_4_n_5_simu_e_x,
-        adapt_k_4_n_5_simu_e_y,
-        color=mlc.purple,
-        linestyle = 'None',
-        marker = 'x',
-        markerfacecolor='None',
-        linewidth = 2,
-        markersize = 10,
-        label = '${K_{\mathtt{U}}}=4$, Adaptive'
-    ) # yellow
+    # axins.plot(
+    #     adapt_k_4_n_5_simu_e_x,
+    #     adapt_k_4_n_5_simu_e_y,
+    #     color=mlc.purple,
+    #     linestyle = 'None',
+    #     marker = 'x',
+    #     markerfacecolor='None',
+    #     linewidth = 2,
+    #     markersize = 10,
+    #     label = '${K_{\mathtt{U}}}=4$, Adaptive'
+    # ) # yellow
 
     axins.plot(
         adapt_op_k_4_n_5_simu_e_x,
-        outage2throughput(adapt_op_k_4_n_5_simu_e_y),
+        adapt_op_k_4_n_5_simu_e_y,
         color=mlc.purple,
         linestyle = ':',
         marker = '3',

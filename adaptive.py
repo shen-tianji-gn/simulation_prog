@@ -89,7 +89,7 @@ def main(argv):
     P_inst = par_lib.P_inst
     # P_u_inst = 0.5 #dBm
     R_s = par_lib.R_s
-    R_c = par_lib.R_c
+    R_c = par_lib.max_R_c(K_s)
     zeta = par_lib.zeta
     Sigma = par_lib.sigma
     Sigma_e = par_lib.sigma_e
@@ -159,7 +159,7 @@ def main(argv):
         adapt_anal_d[P_s_index] = 1 - sum_anal_throughput_d
         adapt_anal_e[P_s_index] = 1 - sum_anal_throughput_e
         
-        print('Power= ' + str(np.around(P_s[P_s_index],1))
+        print('Power= ' + str(P_s[P_s_index])
                 + ' Outage_Anal_D= ' + str(np.around(adapt_anal_d[P_s_index],2))
                 + ' Outage_Anal_E= ' + str(np.around(adapt_anal_e[P_s_index],2))
                 ,end='\n')
@@ -239,9 +239,9 @@ def main(argv):
             
             
             if np.any([
-                np.all([
-                    adapt_d_counter >= counter_max,
-                    adapt_e_counter >= counter_max]),
+                # np.all([
+                #     adapt_d_counter >= counter_max,
+                #     adapt_e_counter >= counter_max]),
                 simulation_time >= simulation_max]):
                 adapt_simu_d[P_s_index] = adapt_d_counter / simulation_time
                 adapt_simu_e[P_s_index] = adapt_e_counter / simulation_time
